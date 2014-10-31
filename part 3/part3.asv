@@ -67,15 +67,14 @@ function part3()
         endPosition_y = joint2_y + armLengths(3) * sin(current_thetas(1) + current_thetas(2) + current_thetas(3));
    
         view(3);
+        plot3(startPosition(1), startPosition(2), startPosition(3));
          plot([0.0 ; joint1_x], [0.0 ; joint1_y], 'o-'); hold on;
 		 plot([joint1_x ; joint2_x], [joint1_y ; joint2_y], 'ro-'); hold on;
-         plot([joint2_x ; endPosition_x], [joint2_y ; endPosition_y], 'bo-'); hold on;         
-        scatter(startPosition(1), startPosition(2), 100, 'filled');
-        scatter(goalPosition(1), goalPosition(2), 100, 'filled');
-        
-%          [xx, yy, zz] = sphere();
+         plot([joint2_x ; endPosition_x], [joint2_y ; endPosition_y], 'bo-'); hold on;
+         [xx, yy, zz] = sphere();
 %          xx = xx + 2;
 %          surf(xx, yy, zz);
+          view(3);
          axis([-5, 5, -5, 5]); hold off;
 %          axis equal
     
