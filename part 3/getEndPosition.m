@@ -20,6 +20,6 @@ endPosition_y = joint2_y + armLength(3) * sin(thetas(1) + thetas(2) + thetas(3))
 
 %we are using the atan2 since it returns the 4 quadrant inverse tangent
 %essentially, we are doing the following thetas = tan^-1(rise/ run) 
-theta = atan2((endPosition_y - joint2_y), (endPosition_x - joint2_x));
-endPosition = [endPosition_x endPosition_y theta];
+% theta = atan2((endPosition_y - joint2_y), (endPosition_x - joint2_x));
+endPosition = [endPosition_x endPosition_y thetas(3)];
 end
