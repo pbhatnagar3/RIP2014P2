@@ -1,0 +1,7 @@
+bugDomain1.txt
+Bug 1: 614.1993
+Bug 2: 267.6734
+
+bugDomain2.txt
+Bug 1: 1926
+Bug 2: 3702

@@ -1,0 +1,16 @@
+domaintype
+circles
+centerx
+50, 150
+centery
+60, 75
+radius
+20, 35
+init
+10, 60
+goal
+210, 75
+xlimit
+0, 220
+ylimit
+0, 100 
