@@ -1,85 +1,46 @@
-
-
-function part3()
+function part3(partNumber)
 close all;
 %hardcoding the starting position
 startPosition = [2.6, 1.3, 1];
 %hardcoding the goal position
 goalPosition = [-1.4, 1.6, -2];
 %thetas
-%     thetas = [1.23, -2.01, 1.82];
 thetas = [1.23, -2.01, 1.82];
 %length
 armLengths = [2,2,1];
 thetasValueList = [thetas];
-
 %************************************************
-%TODO: we still have to tweak the values of threshold and stepValue
+%these are the values that can be tweaked to change the resolution 
 threshold = 0.1;
 stepValue = 0.1;
 %************************************************
-
-%endPoint = startPosition;
 %variable to keeptrack of the number of iterations
 counter = 0;
 %finding the distance from the goal so that we can use it when to
 %stop the while loop
 distanceFromGoal = norm(goalPosition - startPosition);
-
+% thetaThreshold = 0.1;
 %parameters for part b
 circleCenter = [-1.5, 3];
 radius = 1;
-ang=0:0.01:2*pi;
-xp=radius*cos(ang);
-yp=radius*sin(ang);
-thetaThreshold = 0.1;
 
 while (distanceFromGoal > threshold)
-    
-    
-    %     if ((norm(circleCenter - endPoint(1:2))) < radius * 1.3)
     
     joint1Coordinates = [armLengths(1) * cos(thetas(1)), armLengths(1) * sin(thetas(1))];
     joint2Coordinates = [joint1Coordinates(1) + armLengths(2) * cos(thetas(1) + thetas(2)), joint1Coordinates(2) + armLengths(2) * sin(thetas(1) + thetas(2))];
     endPoint = getEndPosition(thetas, armLengths);
     
-    %      if(joint2Coordinates(2) > 2.4 && joint2Coordinates(2) < 2.6 && joint2Coordinates(1) > -1 && joint2Coordinates(1) < -0.97)
-    %         sprintf('I am here')
-    %      end
-    %      if (IsPointNearLineModified(circleCenter, [0, 0], joint1Coordinates, radius))
-    %          sprintf('decreasing value of theta 1')
-    % %          delta = delta * -1;
-    %         thetas(1) = thetas(1) - thetaThreshold;
-    %          joint1Coordinates = [armLengths(1) * cos(thetas(1)), armLengths(1) * sin(thetas(1))];
-    %
-    %     end
-    %
-    %     while (IsPointNearLineModified(circleCenter, joint1Coordinates, joint2Coordinates, radius))
-    %         sprintf('decreasing value of theta 2')
-    %         thetas(2) = thetas(2) + rand();
-    %         thetas(1) = thetas(1) + rand();
-    %         joint1Coordinates = [armLengths(1) * cos(thetas(1)), armLengths(1) * sin(thetas(1))];
-    %         joint2Coordinates = [joint1Coordinates(1) + armLengths(2) * cos(thetas(1) + thetas(2)), joint1Coordinates(2) + armLengths(2) * sin(thetas(1) + thetas(2))];
-    %     end
-    
-    
-    
     
     count = 1;
-    while((norm(circleCenter - joint2Coordinates) <= radius * 1.1 || norm(circleCenter - joint1Coordinates) <= radius * 1.1 || norm(circleCenter - endPoint(1:2)) <= radius * 1.1) && count <100)
-        %             thetas(1) = thetas(1) + 0.314;
-        %             thetas(2) = thetas(2) + .6;
-        thetas(1) = thetas(1) + 0.000914;
-        joint1Coordinates = [armLengths(1) * cos(thetas(1)), armLengths(1) * sin(thetas(1))];
-        joint2Coordinates = [joint1Coordinates(1) + armLengths(2) * cos(thetas(1) + thetas(2)), joint1Coordinates(2) + armLengths(2) * sin(thetas(1) + thetas(2))];        
-        endPoint = getEndPosition(thetas, armLengths);
-        count = count + 1;
-        if(count == 19)
-            sprintf('yo');
+    if(partNumber == 'b')
+        while((norm(circleCenter - joint2Coordinates) <= radius * 1.1 || norm(circleCenter - joint1Coordinates) <= radius * 1.1 || norm(circleCenter - endPoint(1:2)) <= radius * 1.1) && count <100)
+            thetas(1) = thetas(1) + 0.000914;
+            joint1Coordinates = [armLengths(1) * cos(thetas(1)), armLengths(1) * sin(thetas(1))];
+            joint2Coordinates = [joint1Coordinates(1) + armLengths(2) * cos(thetas(1) + thetas(2)), joint1Coordinates(2) + armLengths(2) * sin(thetas(1) + thetas(2))];        
+            endPoint = getEndPosition(thetas, armLengths);
+            count = count + 1;
         end
     end
-    
-    
     %find the location of the end point
     endPoint = getEndPosition(thetas, armLengths);
     
@@ -129,22 +90,19 @@ for index = 1: 1: size(thetasValueList, 1)
     %         plot(circleCenter(1)+xp, circleCenter(2)+yp); hold on;
     
     % Create a purple transparent circle
-    x = radius *sin(-pi:0.1*pi:pi) + circleCenter(1);
-    y = radius*cos(-pi:0.1*pi:pi) + circleCenter(2);
-    %     xc = 3.0;
-    %     yc = 1.0;
-    %     r = 0.5;
-    %     x = r*sin(-pi:0.1*pi:pi) + xc;
-    c = [0.6 0 1];
-    fill(x, y, c, 'FaceAlpha', 0.4)
+    fileName = '3a-%04d';
+    if(partNumber == 'b')
+        x = radius *sin(-pi:0.1*pi:pi) + circleCenter(1);
+        y = radius*cos(-pi:0.1*pi:pi) + circleCenter(2);
+        c = [0.6 0 1];
+        fill(x, y, c, 'FaceAlpha', 0.4)
+        fileName = '3b-%04d';
+    end
     axis square
     axis equal
-    
     axis([-5, 5, -5, 5]); hold off;
     axis equal
-    
-    
-    name = sprintf('3b-%04d',secondCounter);
+    name = sprintf(fileName, secondCounter);
     print(gcf,name,'-dpng');
     secondCounter = secondCounter + 1;
 end
