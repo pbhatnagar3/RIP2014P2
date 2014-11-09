@@ -18,4 +18,4 @@ function [ProjPoint, length_q] = ProjectPoint(vector, q)
           p0(2)*(p1(1) - p0(1)) - p0(1)*(p1(2) - p0(2))] ;
       ProjPoint = a\b;
       ProjPoint = ProjPoint';
-  end
+end

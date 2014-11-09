@@ -71,5 +71,3 @@ function [move, params] = Bug2(robotInit, robotCenter, goalCenter, params, senso
         end
     end
 end
-
-
