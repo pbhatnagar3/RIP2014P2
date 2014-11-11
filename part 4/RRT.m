@@ -1,5 +1,5 @@
 function moves = RRT(obstacles)
-    obj = VideoWriter('rectOb1');
+    obj = VideoWriter('RRT');
     open(obj);
     thetas = [-.5, 0, 0];
     maxIter = 300;
@@ -12,14 +12,18 @@ function moves = RRT(obstacles)
     
      thetaTree = thetas';
      tree = startNode;
-     plot(startNode(1), startNode(2), 'g.', 'MarkerSize', 20);
-     h1 = gcf;
+     plot3(thetas(1), thetas(2), thetas(3), 'g.', 'MarkerSize', 20);
+     %plot(startNode(1), startNode(2), 'm.', 'MarkerSize', 20);
      hold on;
      %plot(endNode(1), endNode(2), 'm.', 'MarkerSize', 20);
      axis square
      axis equal
-     xlabel 'x-distance';
-     ylabel 'y-distance';
+     axis([-pi, pi, -pi, pi, -pi, pi]);
+     %axis([-5,5,-5,5]);
+     xlabel 'theta 1';
+     ylabel 'theta 2';
+     zlabel 'theta 3';
+     view(3);
      [row,~] = size(obstacles);
      circles = [];
      for r = 1:row
@@ -30,7 +34,7 @@ function moves = RRT(obstacles)
          corners = rot*corners;
          corners(1,:) = corners(1,:)./2 + obs(1);
          corners(2,:) = corners(2,:)./2 + obs(2);
-        plot(corners(1,:), corners(2,:), 'g-');
+       % plot(corners(1,:), corners(2,:), 'g-');
         circles = [circles; corners];
      end
    baseTheta = thetaTree(:, 1);
@@ -38,9 +42,9 @@ function moves = RRT(obstacles)
    numIter = 0;
    while numIter < maxIter
 
-        newTh1 = mod(baseTheta(1)-rand()*pi/2 + pi/4, 2*pi);
-        newTh2 = mod(baseTheta(2)+pi -rand()*pi/2 + pi/4, 2*pi) - pi; 
-        newTh3 = mod(baseTheta(3)+pi -rand()*pi/2+ pi/4, 2*pi) - pi; 
+        newTh1 =  max(min(baseTheta(1) -rand()*pi/2 + pi/4, pi),-pi); 
+        newTh2 = max(min(baseTheta(2) -rand()*pi/2 + pi/4, pi),-pi); 
+        newTh3 = max(min(baseTheta(3) -rand()*pi/2 + pi/4, pi),-pi); 
         theta = [newTh1, newTh2, newTh3];
         newNode = getEndPosition(theta, armLengths)';
         distanceVec =(thetaTree(1,:) - theta(1)).^2+ (thetaTree(2,:)-theta(2)).^2+(thetaTree(3,:)-theta(3)).^2;
@@ -48,10 +52,11 @@ function moves = RRT(obstacles)
        [val, ind] = min(distanceVec);
        nearestTheta = thetaTree(:,ind);
        temp = theta' - nearestTheta;
-       thetaVec = temp./(sqrt(sum(temp.^2))*10);
+       thetaVec = temp./(sqrt(sum(temp.^2))*5);
        theta = (nearestTheta + thetaVec)';
        newNode = getEndPosition(theta, armLengths)';
        nearestNode = tree(:,ind);
+       nearestTh = thetaTree(:,ind);
        count = count +1;
        if ~getColisions(theta, circles)
            numIter = numIter +1;
@@ -59,24 +64,9 @@ function moves = RRT(obstacles)
                 thetaTree = [thetaTree, theta'];
                 edgeMat(ind, length(tree)) = val;
                 edgeMat(length(tree), ind) = val;
-                 plot([nearestNode(1), newNode(1)], [nearestNode(2), newNode(2)], 'ko-');    
-%            current_thetas = theta;
-%            %finding the coordinates of joint1 
-%             joint1_x = armLengths(1) * cos(current_thetas(1));
-%             joint1_y = armLengths(1) * sin(current_thetas(1));
-% 
-%             %finding the coordinates of joint2
-%             joint2_x = joint1_x + armLengths(2) * cos(current_thetas(1) + current_thetas(2));
-%             joint2_y = joint1_y + armLengths(2) * sin(current_thetas(1) + current_thetas(2));
-% 
-%             %finding the location of endPoint
-%             endPosition_x = joint2_x + armLengths(3) * cos(current_thetas(1) + current_thetas(2) + current_thetas(3));
-%             endPosition_y = joint2_y + armLengths(3) * sin(current_thetas(1) + current_thetas(2) + current_thetas(3));
-% 
-%              plot([0.0 ; joint1_x], [0.0 ; joint1_y], 'o-'); 
-%              h2 = gcf;
-%              plot([joint1_x ; joint2_x], [joint1_y ; joint2_y], 'ro-');
-%              plot([joint2_x ; endPosition_x], [joint2_y ; endPosition_y], 'bo-'); 
+                plot3([theta(1) nearestTh(1)], [theta(2) nearestTh(2)], [theta(3) nearestTh(3)], 'ko-', 'MarkerSize', 2);    
+               %plot([newNode(1), nearestNode(1)], [newNode(2), nearestNode(2)], 'ko-', 'MarkerSize', 2); 
+           
                 writeVideo(obj, getframe(gcf));
        end   
        if count >=10

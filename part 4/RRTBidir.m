@@ -1,41 +1,40 @@
 function moves = RRTBidir(startNode, endNode, obstacles)
+    t = cputime;
     obj = VideoWriter('BiDirTree');
     obj2 = VideoWriter('BiDirArm');
     open(obj);
     open(obj2);
-    tree = startNode;
-    treeG = endNode;
-    maxIter = 300;
+   
+    maxIter = 400;
     edgeMat = zeros(maxIter,maxIter);
     edgeMatG = zeros(maxIter,maxIter);
     goalFound = false;
-    thresh = 2;
+    thresh = 1;
      armLengths = [2,2,1];
      figure;
-     thetas = [0, 0, startNode(3)];
-     xst = startNode(1) - cos(thetas(3));
-     yst = startNode(2) - sin(thetas(3));
-     angle = acos(-1*(xst.^2 + yst.^2 - 8)/8);
-     thetas(1) = atan(yst/xst)-pi/2-angle/2;
-     thetas(2) =  angle-pi;
-     thetas(3) = mod(thetas(3) - thetas(2) - thetas(1), pi);
-     thetas = mod(thetas, 2*pi);
-     thetasEnd = [1.9199; 2.0164; 0.2848];
-     thetaTreeG = thetasEnd;
+     thetas = startNode';
+     thetaTreeG = endNode;
      gNode1 =endNode;
      gNode2 = startNode;
      
      
      thetaTree = thetas';
-     plot(startNode(1), startNode(2), 'g.', 'MarkerSize', 20);
+     plot3(thetas(1), thetas(2), thetas(3), 'g.', 'MarkerSize', 20);
+     
      hold on;
-     plot(endNode(1), endNode(2), 'm.', 'MarkerSize', 20);
+      plot3(endNode(1), endNode(2), endNode(3), 'm.', 'MarkerSize', 20);
+    % plot(endNode(1), endNode(2), 'm.', 'MarkerSize', 20);
      %plot(endNode(1), endNode(2), 'm.', 'MarkerSize', 20);
      axis square
      axis equal
-     xlabel 'x-distance';
-     ylabel 'y-distance';
-     axis([-5,5,-5,5]);
+%      xlabel 'x-distance';
+%      ylabel 'y-distance';
+     %axis([-5,5,-5,5]);
+     xlabel 'theta 1';
+     ylabel 'theta 2';
+     zlabel 'theta 3';
+     view(3);
+     axis([-pi,pi,-pi,pi, -pi, pi]);
      [row,~] = size(obstacles);
      circles = [];
         for r = 1:row
@@ -46,7 +45,7 @@ function moves = RRTBidir(startNode, endNode, obstacles)
          corners = rot*corners;
          corners(1,:) = corners(1,:)./2 + obs(1);
          corners(2,:) = corners(2,:)./2 + obs(2);
-        plot(corners(1,:), corners(2,:), 'g-');
+       % plot(corners(1,:), corners(2,:), 'g-');
         circles = [circles; corners];
      end
    baseTheta = thetaTree(:, 1);
@@ -55,45 +54,56 @@ function moves = RRTBidir(startNode, endNode, obstacles)
    numIter = 0;
    while numIter < maxIter-1 & ~goalFound
         nio = numIter;
-        newTh1 = mod(baseTheta(1)-rand()*pi/4 + pi/8, 2*pi);
-        newTh2 = mod(baseTheta(2)+pi -rand()*pi/4 + pi/8, 2*pi) - pi; 
-        newTh3 = mod(baseTheta(3)+pi -rand()*pi/4+ pi/8, 2*pi) - pi; 
+        newTh1 =  max(min(baseTheta(1) -rand()*pi/2 + pi/4, pi),-pi); 
+        newTh2 = max(min(baseTheta(2) -rand()*pi/2 + pi/4, pi),-pi); 
+        newTh3 = max(min(baseTheta(3) -rand()*pi/2 + pi/4, pi),-pi); 
         
-        newTh1G = mod(baseThetaG(1)-rand()*pi/4 + pi/8, 2*pi);
-        newTh2G= mod(baseThetaG(2)+pi -rand()*pi/4 + pi/8, 2*pi) - pi; 
-        newTh3G = mod(baseThetaG(3)+pi -rand()*pi/4+ pi/8, 2*pi) - pi; 
+        newTh1G =  max(min(baseThetaG(1) -rand()*pi/2 + pi/4, pi),-pi); 
+        newTh2G = max(min(baseThetaG(2) -rand()*pi/2 + pi/4, pi),-pi); 
+        newTh3G = max(min(baseThetaG(3) -rand()*pi/2 + pi/4, pi),-pi); 
         
         theta = [newTh1, newTh2, newTh3];
         thetaG = [newTh1G, newTh2G, newTh3G];
 
         
         distanceVec =(thetaTree(1,:) - theta(1)).^2+ (thetaTree(2,:)-theta(2)).^2+(thetaTree(3,:)-theta(3)).^2;
-        
-       [val, ind] = min(distanceVec);
+        [val, ind] = min(distanceVec);
+       nearestTh = thetaTree(:,ind);
+       temp = theta' - nearestTh;
+       amp = sqrt(sum(temp.^2));
+       steps = ceil(amp/.25);
+       thetaVec = temp./(amp*4);    
        newNode = getEndPosition(theta, armLengths)';
-       nearestNode = tree(:,ind);
        count = count +1;
-       if ~getColisions(nearestNode, theta, circles)
-                numIter = numIter +1;
-                tree = [tree, newNode];
-                thetaTree = [thetaTree, theta'];
-                edgeMat(ind, length(tree)) = val;
-                edgeMat(length(tree), ind) = val;
-                plot([nearestNode(1), newNode(1)], [nearestNode(2), newNode(2)], 'ko-'); 
-                distanceVec =(thetaTreeG(1,:) - theta(1)).^2+ (thetaTreeG(2,:)...
-            -theta(2)).^2+(thetaTreeG(3,:)-theta(3)).^2;              
-            [val, ind] = min(distanceVec);
-            if val < thresh
-                if ~getColisions(treeG(:, ind), theta, circles)
-                    nn = treeG(:,ind);
-                   goalFound = true;
-                   connectNode1 = length(tree);
-                   connectNode2 = ind;
-                   distFin = val;
-                    plot([nn(1), newNode(1)], [nn(2), newNode(2)], 'ko-');
-                end
-            end  
-       end   
+       theta = nearestTh+thetaVec;
+       for iii=1:steps
+           if ~getColisions(nearestTh, theta, circles) && iii~=steps
+               nearestTh = theta;
+               theta = theta + thetaVec;
+           elseif iii~= 1 | iii == steps
+               numIter = numIter +1;
+                    theta = theta - thetaVec;
+                    thetaTree = [thetaTree, theta];
+                    edgeMat(ind, length(thetaTree)) = val;
+                    edgeMat(length(thetaTree), ind) = val;
+                    nearestTh = thetaTree(:,ind);
+                     plot3([theta(1) nearestTh(1)], [theta(2) nearestTh(2)],...
+                     [theta(3) nearestTh(3)], 'ko-', 'MarkerSize', 2);  
+                    distanceVec =(thetaTreeG(1,:) - theta(1)).^2+ (thetaTreeG(2,:)...
+                -theta(2)).^2+(thetaTreeG(3,:)-theta(3)).^2;              
+                [val, ind2] = min(distanceVec);
+                if val < thresh
+                    if ~getColisions(thetaTreeG(:,ind2), theta, circles)
+                        nn = thetaTreeG(:,ind2);
+                       goalFound = true;
+                       connectNode1 = length(thetaTree);
+                       connectNode2 = ind2;
+                       distFin = val;
+                        plot3([nn(1), theta(1)], [nn(2), theta(2)],[nn(3), theta(3)], 'ko-');
+                    end
+                end  
+           end   
+       end
        
        
         distanceVec =(thetaTreeG(1,:) - thetaG(1)).^2+ (thetaTreeG(2,:)...
@@ -101,47 +111,61 @@ function moves = RRTBidir(startNode, endNode, obstacles)
         
        [val, ind] = min(distanceVec);
        newNodeG = getEndPosition(thetaG, armLengths)';
-       nearestNode = treeG(:,ind);
-  
-       if ~getColisions(nearestNode, thetaG, circles) &&~goalFound
-           numIter = numIter +1;
-                treeG = [treeG, newNodeG];
-                thetaTreeG = [thetaTreeG, thetaG'];
-                edgeMatG(ind, length(treeG)) = val;
-                edgeMatG(length(treeG), ind) = val;
-                plot([nearestNode(1), newNodeG(1)], [nearestNode(2), newNodeG(2)], 'ko-');
-                 distanceVec =(thetaTree(1,:) - thetaG(1)).^2+ (thetaTree(2,:)...
-            -thetaG(2)).^2+(thetaTree(3,:)-thetaG(3)).^2;              
-            [val, ind] = min(distanceVec);
-             if val < thresh & ~goalFound
-                 if ~getColisions(tree(:, ind), thetaG, circles)
-                     nn = tree(:,ind);
-                   goalFound = true;
-                   connectNode1 = ind;
-                   connectNode2 = length(treeG);
-                   distFin = val;
-                   plot([nn(1), newNodeG(1)], [nn(2), newNodeG(2)], 'ko-');
-                 end
-            end 
-               
-       end   
-       if numIter ~= nio
-           writeVideo(obj, getframe(gcf));
+       
+       nearestTh = thetaTreeG(:,ind);
+       temp = thetaG' - nearestTh;
+       amp = sqrt(sum(temp.^2));
+       steps = ceil(amp/.25);
+       thetaVec = temp./(amp*4);    
+       newNode = getEndPosition(theta, armLengths)';
+       count = count +1;
+       thetaG = nearestTh+thetaVec;
+       for iii = 1:steps
+           if ~getColisions(nearestTh, thetaG, circles) &&~goalFound && iii~=steps
+                nearestTh = thetaG;
+               thetaG = thetaG + thetaVec;
+           elseif (iii~= 1 | iii == steps) &&~goalFound
+               numIter = numIter +1;
+                thetaG = thetaG - thetaVec;
+                    thetaTreeG = [thetaTreeG, thetaG];
+                    edgeMatG(ind, length(thetaTreeG)) = val;
+                    edgeMatG(length(thetaTreeG), ind) = val;
+                    nearestTh = thetaTreeG(:,ind);
+                    plot3([thetaG(1) nearestTh(1)], [thetaG(2) nearestTh(2)],...
+                        [thetaG(3) nearestTh(3)], 'ko-', 'MarkerSize', 2);  
+                     distanceVec =(thetaTree(1,:) - thetaG(1)).^2+ (thetaTree(2,:)...
+                -thetaG(2)).^2+(thetaTree(3,:)-thetaG(3)).^2;              
+                [val, ind2] = min(distanceVec);
+                 if val < thresh & ~goalFound
+                     if ~getColisions(thetaTree(:, ind2), thetaG, circles)
+                         nn = thetaTree(:,ind2);
+                       goalFound = true;
+                       connectNode1 = ind2;
+                       connectNode2 = length(thetaTreeG);
+                       distFin = val;
+                       plot3([nn(1), thetaG(1)], [nn(2), thetaG(2)],[nn(3), thetaG(3)], 'ko-');
+                     end
+                end 
+
+           end   
+           if numIter ~= nio
+              % writeVideo(obj, getframe(gcf));
+           end
        end
        
        if count >=10
-            newTh1 = rand()*2*pi;
+            newTh1 = rand()*2*pi-pi;
             newTh2 = rand()*2*pi-pi;
             newTh3 =rand()*2*pi-pi;
             temp = [newTh1;newTh2;newTh3];
-            goal = getEndPosition(temp', armLengths);
-            distanceVec =(tree(1,:) - goal(1)).^2+ (tree(2,:)...
-                 -goal(2)).^2+(tree(3,:)-goal(3)).^2;
+           
+            distanceVec =(thetaTree(1,:) - temp(1)).^2+ (thetaTree(2,:)...
+                 -temp(2)).^2+(thetaTree(3,:)-temp(3)).^2;
            [~, minInd] = min(distanceVec);
            baseTheta = thetaTree(:, minInd);
            
-           distanceVec =(treeG(1,:) - goal(1)).^2+ (treeG(2,:)...
-                 -goal(2)).^2+(treeG(3,:)-goal(3)).^2;
+           distanceVec =(thetaTreeG(1,:) - temp(1)).^2+ (thetaTreeG(2,:)...
+                 -temp(2)).^2+(thetaTreeG(3,:)-temp(3)).^2;
            [~, minInd] = min(distanceVec);
            baseThetaG = thetaTreeG(:, minInd);
            count = 0;
@@ -153,10 +177,9 @@ function moves = RRTBidir(startNode, endNode, obstacles)
        edgeMat(connectNode1, connectNode2+maxIter) = distFin;
         edgeMat(connectNode2+maxIter, connectNode1) = distFin;
    end
-   [rrrr, cccc] = size(treeG);
+   [rrrr, cccc] = size(thetaTreeG);
 
-       tree(:, maxIter+1:maxIter+cccc)=treeG;
-       thetaTree(:, maxIter+1:maxIter+cccc) = thetaTreeG;
+   thetaTree(:, maxIter+1:maxIter+cccc)=thetaTreeG;
  
    
    
@@ -170,8 +193,8 @@ function moves = RRTBidir(startNode, endNode, obstacles)
    curDist = inf;
    curThresh = .05;
    notfound = true;
-   distanceVec =(tree(1,:) - endNode(1)).^2+ (tree(2,:)...
-                 -endNode(2)).^2+(tree(3,:)-endNode(3)).^2;
+   distanceVec =(thetaTree(1,:) - endNode(1)).^2+ (thetaTree(2,:)...
+                 -endNode(2)).^2+(thetaTree(3,:)-endNode(3)).^2;
    [~, minInd] = min(distanceVec);
    while ~isempty(newNode) & size(c)~=0 & notfound
       [len, path] = c.pop();
@@ -187,7 +210,7 @@ function moves = RRTBidir(startNode, endNode, obstacles)
           if ~any(i == explored)
                pathn = [path, i];
               lenn = -1*edges(i) +len;
-              dist = sum((endNode - tree(:,i)).^2);
+              dist = sum((endNode - thetaTree(:,i)).^2);
               if dist<curDist
                   curDist = dist;
                   curPath = pathn;
@@ -197,9 +220,12 @@ function moves = RRTBidir(startNode, endNode, obstacles)
       end
    end
    figure;
-
+   endNodexy = getEndPosition(endNode, armLengths);
+   startNodexy = getEndPosition(startNode, armLengths);
+   thetaTree = [thetaTree, endNode];
+     [rtr, ctr] = size(thetaTree)
    [rr, ~] = size(circles);
-   for p  = curPath
+   for p  = [curPath, ctr]
        current_thetas = thetaTree(:, p);
        %finding the coordinates of joint1 
         joint1_x = armLengths(1) * cos(current_thetas(1));
@@ -212,9 +238,9 @@ function moves = RRTBidir(startNode, endNode, obstacles)
         %finding the location of endPoint
         endPosition_x = joint2_x + armLengths(3) * cos(current_thetas(1) + current_thetas(2) + current_thetas(3));
         endPosition_y = joint2_y + armLengths(3) * sin(current_thetas(1) + current_thetas(2) + current_thetas(3));
-         plot(startNode(1), startNode(2), 'g.', 'MarkerSize', 20);
+         plot(startNodexy(1), startNodexy(2), 'g.', 'MarkerSize', 20);
          hold on;
-         plot(endNode(1), endNode(2), 'm.', 'MarkerSize', 20);
+         plot(endNodexy(1), endNodexy(2), 'm.', 'MarkerSize', 20);
          
          plot([0.0 ; joint1_x], [0.0 ; joint1_y], 'o-'); hold on;
 		 plot([joint1_x ; joint2_x], [joint1_y ; joint2_y], 'ro-'); hold on;
@@ -227,10 +253,13 @@ function moves = RRTBidir(startNode, endNode, obstacles)
          axis equal 
          xlabel 'x-distance';
          ylabel 'y-distance';
-         writeVideo(obj2, getframe(gcf));
+         %writeVideo(obj2, getframe(gcf));
          hold off;
    end
-
+   sum((getEndPosition(thetaTree(:,curPath(end)), armLengths)' - endNode).^2)
+   t-cputime
+   numIter
+   length(curPath)
    
     moves = edgeMat;
     close(obj);
@@ -238,7 +267,8 @@ function moves = RRTBidir(startNode, endNode, obstacles)
 end
 function isIntersect = getColisions(startNode, endTh, obstacles)
     endCoords = getEndPositions(endTh, [2,2,1]);
-    endCoords = [[0;0], endCoords, [startNode(1);startNode(2)]];
+       endCoords2 = getEndPosition(startNode, [2,2,1])';
+    endCoords = [[0;0], endCoords, endCoords2(1:2)];
     
     isIntersect = false;
     [row, ~] = size(obstacles);
