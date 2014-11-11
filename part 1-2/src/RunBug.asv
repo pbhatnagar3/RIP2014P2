@@ -169,11 +169,7 @@ function [] = RunBug(fname, option)
         end
         
         % Update totalmove
-        if ~strcmp(params.mode, 'Straight')
-            totalmove = totalmove + norm(move);
-        else
-            totalmove = totalmove + params.step;
-        end
+        totalmove = totalmove + norm(move);
        
         % Move the robot and update the GUI
         robotCenter = robotCenter + move;

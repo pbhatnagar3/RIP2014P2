@@ -1,6 +1,6 @@
 bugDomain1.txt
-Bug 1: 614.1993
-Bug 2: 267.6734
+Bug 1: 614.1994
+Bug 2: 269.4318
 
 bugDomain2.txt
 Bug 1: 1926

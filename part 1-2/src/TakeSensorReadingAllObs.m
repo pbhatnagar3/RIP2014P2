@@ -111,4 +111,3 @@ function [xmin, ymin, dmin] = PointSegmentDistanceSquare(px, py, s0x, s0y, s1x, 
     ymin = vy;
     dmin = (px - vx) * (px - vx) + (py - vy) * (py - vy);    
 end
-
