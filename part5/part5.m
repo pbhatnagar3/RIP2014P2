@@ -21,8 +21,8 @@ addpath('../');
     %ArmE keeps the number of indices in the Arm Matrix.
     armE = [1];
 
-    %For a=1 -> A in the Algorithm A = 1000, Therefore 1000 iterations.
-    while(size(treeVertices,2) < 1000)
+    %For a=1 -> A in the Algorithm A = 10000, Therefore 1000 iterations.
+    while(size(treeVertices,2) < 10000)
         
         %Finding the Random value through -pi to pi Q_Rand is needed to be
         %found.
@@ -54,6 +54,8 @@ addpath('../');
        
         %Calculate the task error.
         %Computing the Task Error by using the Forward Kinematics T^e_0
+        %Forward Kinematics is used from Joint Space to Turn into Cartesian
+        %Space. 
         forwardKinematicsValue = [];
         forwardKinematicsValue(1) = cos(qDir(1)) * armLength(1) + cos(qDir(1) + qDir(2)) * armLength(2) + cos(sum(qDir(:))) * armLength(3);
         forwardKinematicsValue(2) = sin(qDir(1)) * armLength(1) + sin(qDir(1) + qDir(2)) * armLength(2) + sin(sum(qDir(:))) * armLength(3);
@@ -78,7 +80,7 @@ addpath('../');
             qDir = q_Dir;
             break;
           end
-          if norm(f_y) < 0.0005 || xyVertices > 1000
+          if norm(f_y) < 0.0005 || xyVertices > 10000
             break
           end
           
@@ -89,6 +91,8 @@ addpath('../');
           forwardKinematicsValue2(3) = sum(qDir(:));
           position = forwardKinematicsValue2';
           f_x = 0;
+          
+          %Updated F_Y value
           f_y = norm(2.8868 - position(2));
           %End of the Calculation. These values will be further used to
           %help provide a normalized vector.
@@ -102,16 +106,24 @@ addpath('../');
           goalVelocity = [xVelocity; yVelocity; thetaVelocity];
           goalVelocity = 0.05 * goalVelocity;
           Jacboian = getJacobian(qDir, armLength);
+          %Inverse of Jacobian is used to provide the Kinematics for the
+          %Robot. 
           jVelocity = inv(Jacboian) * goalVelocity;
           qDir = qDir - 0.05* jVelocity;    
 
         end
         %if *CONSTRAINED* NEW CONFIG(qs, qnear) Add the vertices to the
         %matrices.
+        
+        %Checks if y is greater than 3. Task Constraints.
+        if(f_y > 3)
+            break;
+        end
         if(f_y < 2* 0.2)
             treeVertices = [treeVertices, qDir];
             armE(length(armE) + 1) = near;
             numOfEdges = numOfEdges + 1;
+            f_y = f_y;
             Edges(numOfEdges, :) = [qNear', qDir'];
         end
         
@@ -127,7 +139,7 @@ addpath('../');
         forwardKinematicsValue4(3) = sum(goalConfiguration(:));
         forwardKinematics_goal = forwardKinematicsValue4;
         
-        %If Normalized, then break from the while loop.
+        %If Normalized value is close to the goal, then break from the while loop.
         if(norm(forwardKinematics_new - forwardKinematics_goal) < 0.2)
             break;
         end
@@ -139,13 +151,6 @@ addpath('../');
     finalNode = treeVertices(1:3, end); 
     lineSegment = finalNode;
     xyVertices = length(treeVertices);
-
-    %If the value of the Vertices is greater than zero populate Line
-    %Segments. Also make sure the armE is populated. 
-    while(xyVertices > 1)
-        lineSegment = [lineSegment treeVertices(1:3, xyVertices)];
-        xyVertices = armE(xyVertices);  
-    end
     %Instantiate tree to all zeros so that it can be populated with Tree
     %vertices. 
     tree = zeros(length(armE), 6);
@@ -154,6 +159,15 @@ addpath('../');
     for i = 1:1:length(armE)
         tree(i, :) = [treeVertices(1:3, i)', treeVertices(1:3, armE(i))'];
     end
+    
+    %If the value of the Vertices is greater than zero populate Line
+    %Segments. Also make sure the armE is populated. 
+    while(xyVertices > 1)
+        lineSegment = [lineSegment treeVertices(1:3, xyVertices)];
+        xyVertices = armE(xyVertices);  
+    end
+    
+    
     
     %Plot the Graph for the Tree. 
     
@@ -171,15 +185,15 @@ addpath('../');
       end;
       %Draw the 3D-Point
       if(ii > 1)
-          delete(curr);
           plot3(tree(ii-1,[1,4]), tree(ii-1,[2,5]), tree(ii-1,[3,6]), 'k'); hold on;
       end
-      curr = plot3(tree(ii,[1,4]), tree(ii,[2,5]), tree(ii,[3,6]), 'o-'); hold on;
-      %Start the frames and print the frames for the movie. 
-      if(mod(ii,10) == 0)
+      plot3(tree(ii,[1,4]), tree(ii,[2,5]), tree(ii,[3,6]), 'k'); hold on;
+      %Start the frames and print the frames for the movie.
+      values = mod(ii,10);
+      if(values == 0)
+        axis([-4 4 -4 4 -4 4]);
         name = sprintf('tree%05d',count);
         view(count*3, 28);
-        axis([-4 4 -4 4 -4 4]);
         axis square;    
         print(figure(1),name,'-dpng');
         count = count+1;
@@ -190,7 +204,7 @@ addpath('../');
     drawArms(lineSegment,armLength);   
 end
 
-%Function to draw Arms. 
+%Function to draw Arms. Code From Part 3.  
 function [] = drawArms(line,q1)
     startConfiguration = [1.5707; -1.2308; 0];
     goalConfiguration  = [1.5707; 1.2308; 0];
